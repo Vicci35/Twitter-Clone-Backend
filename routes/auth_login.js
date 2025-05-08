@@ -1,6 +1,6 @@
 import express from "express";
 import User from "../models/User.js";
-import bcrypt from "bcrypt";
+import { comparePasswords } from "../services/auth.js";
 import jwt from "jsonwebtoken";
 
 const router = express.Router();
@@ -13,7 +13,7 @@ router.post("/login", async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(401).json({ message: "Fel e-post." });
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await comparePasswords(password, user.password);
     if (!isMatch) return res.status(401).json({ message: "Fel lösenord." });
 
     const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "1h" });
