@@ -1,6 +1,8 @@
 import express from "express";
 import User from "../models/User.js";
 
+import { getHashedPassword } from "../services/auth.js";
+
 const router = express.Router();
 
 router.post("/register", async (req, res) => {
@@ -29,9 +31,11 @@ router.post("/register", async (req, res) => {
             return res.status(409).json({message: "Nickname already in use!"});
         };
 
+        const hashedPassword = await getHashedPassword(password);
+
         const newUser = new User({
             name, 
-            password,
+            password: hashedPassword,
             email,
             nickname,
             about,
