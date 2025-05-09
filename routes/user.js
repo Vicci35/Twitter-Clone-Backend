@@ -6,59 +6,44 @@ import { getHashedPassword } from "../services/auth.js";
 const router = express.Router();
 
 router.post("/register", async (req, res) => {
+  console.log("Loggas detta?");
   console.log(req.body);
   try {
-    console.log("Loggas detta?");
-    res.status(200).json({ msg: req.body });
+    const { name, password, email, username, repeatPassword } = req.body;
+
+    if (!name || !password || !email || !username) {
+      return res.status(400).json({ error: "Missing required inputs" });
+    }
+
+    const existantMail = await User.findOne({ email });
+    if (existantMail) {
+      return res.status(409).json({ message: "Email already in use!" });
+    }
+    const existantNick = await User.findOne({ nickname: username });
+    if (existantNick) {
+      return res.status(409).json({ message: "Nickname already in use!" });
+    }
+
+    const hashedPassword = await getHashedPassword(password);
+
+    //   Användare kan redigera tom information i settings senare
+    const newUser = new User({
+      name,
+      password: hashedPassword,
+      email,
+      nickname: username,
+      about: "",
+      hometown: "",
+      website: "",
+      occupation: "",
+    });
+
+    newUser.save();
+
+    res.status(201).json({ message: "User registered successfully" });
   } catch (error) {
-    console.log("... eller detta?");
-    console.log(error);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: error.message });
   }
-  // try {
-  //     const {
-  //         name,
-  //         password,
-  //         email,
-  //         nickname,
-  //         about,
-  //         hometown,
-  //         website,
-  //         occupation,
-  //     } = req.body;
-
-  //     if (!name || !password || !email || !nickname) {
-  //         return res.status(400).json({ error: "Missing required inputs" });
-  //     };
-
-  //     const existantMail = await User.findOne({ email });
-  //     if (existantMail) {
-  //         return res.status(409).json({message: "Email already in use!"})
-  //     };
-  //     const existantNick = await User.findOne({ nickname });
-  //     if (existantNick) {
-  //         return res.status(409).json({message: "Nickname already in use!"});
-  //     };
-
-  //     const hashedPassword = await getHashedPassword(password);
-
-  //     const newUser = new User({
-  //         name,
-  //         password: hashedPassword,
-  //         email,
-  //         nickname,
-  //         about,
-  //         hometown,
-  //         website,
-  //         occupation,
-  //     });
-
-  //     newUser.save();
-
-  //     res.status(201).json({ message: "User registered successfully" });
-  //     } catch (error) {
-  //         res.status(500).json({ error: error.message });
-  //     }
 });
 
 export default router;
