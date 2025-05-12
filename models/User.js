@@ -20,19 +20,19 @@ const userSchema = new mongoose.Schema({
     },
     about: {
         type: String,
-        defaut: "",
+        default: "",
     },
     hometown: {
         type: String,
-        defaut: "",
+        default: "",
     },
     website: {
         type: String,
-        defaut: "",
+        default: "",
     },
     occupation: {
         type: String,
-        defaut: "",
+        default: "",
     },
     createdAt: {
         type: Date,
