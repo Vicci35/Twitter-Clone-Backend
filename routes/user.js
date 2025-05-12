@@ -12,16 +12,16 @@ router.post("/register", async (req, res) => {
     const { name, password, email, username, repeatPassword } = req.body;
 
     if (!name || !password || !email || !username) {
-      return res.status(400).json({ error: "Missing required inputs" });
+      return res.status(400).json({ inputError: "Missing required inputs" });
     }
 
     const existantMail = await User.findOne({ email });
     if (existantMail) {
-      return res.status(409).json({ message: "Email already in use!" });
+      return res.status(409).json({ signupError: "Email already in use!" });
     }
     const existantNick = await User.findOne({ nickname: username });
     if (existantNick) {
-      return res.status(409).json({ message: "Nickname already in use!" });
+      return res.status(409).json({ signupError: "Nickname already in use!" });
     }
 
     const hashedPassword = await getHashedPassword(password);
@@ -56,8 +56,8 @@ router.get("/:id", async (req, res) => {
 
     res.status(200).json(user);
   } catch (error) {
-    res.status(500).json({ error: error.message   });
+    res.status(500).json({ error: error.message });
   }
-})
+});
 
 export default router;
