@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-const authenticateToken = (req, res, nest) => {
+const authenticateToken = (req, res, next) => {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
 
@@ -15,6 +15,7 @@ const authenticateToken = (req, res, nest) => {
       return res.status(403).json({ message: "Ogiltig token" });
     }
 
+    console.log("Token verified");
     req.user = user;
     next();
   });

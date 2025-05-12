@@ -7,14 +7,22 @@ import cors from "cors";
 import userRoutes from "./routes/user.js";
 import authRoutes from "./routes/auth_login.js";
 import postRoutes from "./routes/posts.js";
+import dashRouter from "./routes/dashboard.js";
 
 const app = express();
 
-app.use(cors({ origin: "http://localhost:5173" }));
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+  })
+);
+
 app.use(express.json());
 
 app.use("/api/users", userRoutes);
 app.use("/api", authRoutes);
 app.use("/api/posts", postRoutes);
+app.use("/dashboard", dashRouter);
 
 export default app;
