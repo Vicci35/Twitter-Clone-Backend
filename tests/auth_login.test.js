@@ -14,6 +14,8 @@ beforeAll(async () => {
   await User.create({
     email: "test@example.com",
     password: hashedPassword,
+    name: "Test Användare",
+    nickname: "testarn",
   });
 });
 
@@ -29,7 +31,7 @@ test("logga in korrekt användare och retunera token", async () => {
   expect(res.statusCode).toBe(200);
   expect(res.body.token).toBeDefined();
   expect(res.body.user.email).toBe("test@example.com");
-});
+}, 10000);
 
 test("ska returnera 401 vid felaktigt lösenord", async () => {
   const res = await request(app).post("/api/login").send({

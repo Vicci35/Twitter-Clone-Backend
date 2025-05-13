@@ -2,7 +2,7 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "test": "jest"
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
