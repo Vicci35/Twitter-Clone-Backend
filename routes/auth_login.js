@@ -2,6 +2,9 @@ import express from "express";
 import User from "../models/User.js";
 import { comparePasswords } from "../services/auth.js";
 import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const router = express.Router();
 
