@@ -5,9 +5,9 @@ import { getHashedPassword } from "../services/auth.js";
 const router = express.Router();
 
 router.post("/signup", async (req, res) => {
-  const { email, password, nickname } = req.body;
+  const { email, password, nickname, name } = req.body;
 
-  if (!email || !password || !nickname) {
+  if (!email || !password || !nickname || !name) {
     return res.status(400).json({ message: "Alla fält måste fyllas i." });
   }
 
@@ -18,7 +18,7 @@ router.post("/signup", async (req, res) => {
     }
 
     const hashedPassword = await getHashedPassword(password);
-    const newUser = new User({ email, password: hashedPassword, nickname });
+    const newUser = new User({ email, password: hashedPassword, nickname, name });
 
     await newUser.save();
     res.status(201).json({ userID: newUser._id });
