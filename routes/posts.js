@@ -1,5 +1,6 @@
 import express from "express";
 import Post from "../models/Post.js";
+import User from "../models/User.js";
 
 const router = express.Router();
 
@@ -9,6 +10,24 @@ router.get("/feed", async (req, res) => {
         const posts = await Post.find()
             .populate("author", "nickname")
             .sort({ createdAt: -1 });
+        
+        res.status(200).json(posts);
+    } catch (error) {
+        res.status(500).json({ error: error.message })
+    }
+})
+
+//feed posts only from followed users
+router.get("/feed/following/:id", async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ error: "Uer not found"})
+        }
+
+        const posts = await Post.find({ author: { $in: user.following }})
+            .populate("author", "nickname")
+            .sort({ createdAt: -1})
         
         res.status(200).json(posts);
     } catch (error) {
