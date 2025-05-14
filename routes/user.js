@@ -6,8 +6,6 @@ import { getHashedPassword } from "../services/auth.js";
 const router = express.Router();
 
 router.post("/register", async (req, res) => {
-  console.log("Loggas detta?");
-  console.log(req.body);
   try {
     const { name, password, email, username, repeatPassword } = req.body;
 
@@ -60,17 +58,29 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-router.put("/:id", async (req, res) => {
+router.put("/update-info", async (req, res) => {
   try {
-    const { name, nickname, about, occupation, hometown, website } = req.body;
+    const {
+      id,
+      changeName,
+      changeNick,
+      changeAbout,
+      changeMail,
+      changeOccupation,
+      hometown,
+      changeWebsite,
+    } = req.body;
+
     const updatedUser = await User.findByIdAndUpdate(
-      req.params.id, {
-        name, 
-        nickname,
-        about,
-        occupation,
-        hometown,
-        website
+      id,
+      {
+        name: changeName,
+        nickname: changeNick,
+        about: changeAbout,
+        email: changeMail,
+        occupation: changeOccupation,
+        hometown: hometown,
+        website: changeWebsite,
       },
       { new: true, runValidators: true }
     ).select("-password");
@@ -79,10 +89,10 @@ router.put("/:id", async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    res.status(200).json(updatedUser);
+    res.status(200).json({ ok: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
-})
+});
 
 export default router;
