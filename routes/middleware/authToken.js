@@ -17,14 +17,13 @@ const authenticateToken = async (req, res, next) => {
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
 
-    // Hämta användare från databasen, exkludera lösenordet
     const user = await User.findById(decoded.id).select("-password");
 
     if (!user) {
       return res.status(404).json({ message: "Användare hittades inte" });
     }
 
-    req.user = user; // Nu har du hela användaren i req.user
+    req.user = user;
     next();
   } catch (err) {
     console.error(err);
