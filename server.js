@@ -9,7 +9,9 @@ const PORT = 3000;
 
 async function start() {
   try {
-    await mongoose.connect(mongoKey);
+    await mongoose.connect(mongoKey, {
+      serverSelectionTimeoutMS: 5000, // Timeout efter 5 sekunder
+    });
     console.log(" Connected to MongoDB");
 
     app.listen(PORT, () => {
