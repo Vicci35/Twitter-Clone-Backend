@@ -5,12 +5,12 @@ const followSchema = new mongoose.Schema(
     followerId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User", //Den som följer
-      require: true,
+      required: true,
     },
-    followeeId: {
+    targetUserId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User", //dem som blir följd
-      require: true,
+      required: true,
     },
   },
   { timestamps: true }
