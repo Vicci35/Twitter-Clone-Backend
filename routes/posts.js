@@ -71,7 +71,8 @@ router.post("/", async (req, res) => {
 
         await newPost.save();
 
-        res.status(201).json(newPost);
+        const populatedPost = await Post.findById(newPost._id).populate("author", "nickname");
+        res.status(201).json(populatedPost);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
