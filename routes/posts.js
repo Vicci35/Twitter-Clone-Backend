@@ -54,14 +54,14 @@ router.post("/", async (req, res) => {
         const { content, author } = req.body;
 
         if (!content || !author) {
-        return res.status(400).json({ error: "Missing content or author" });
+            return res.status(400).json({ error: "Missing content or author" });
         }
         if (content.length > 140) {
-        return res.status(400).json({ error: "Content exceeds 140 characters" });
+            return res.status(400).json({ error: "Content exceeds 140 characters" });
         }
         const userExists = await User.findById(author);
         if (!userExists) {
-        return res.status(404).json({ error: "Author not found" });
+            return res.status(404).json({ error: "Author not found" });
         }
 
         const newPost = new Post({
