@@ -48,4 +48,33 @@ router.get("/user/:id", async (req, res) => {
     }
 })
 
+//create post
+router.post("/", async (req, res) => {
+    try {
+        const { content, author } = req.body;
+
+        if (!content || !author) {
+        return res.status(400).json({ error: "Missing content or author" });
+        }
+        if (content.length > 140) {
+        return res.status(400).json({ error: "Content exceeds 140 characters" });
+        }
+        const userExists = await User.findById(author);
+        if (!userExists) {
+        return res.status(404).json({ error: "Author not found" });
+        }
+
+        const newPost = new Post({
+            content,
+            author
+        })
+
+        await newPost.save();
+
+        res.status(201).json(newPost);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+})
+
 export default router;
