@@ -83,8 +83,8 @@ router.get("/followers/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
 
-    const followers = await Follow.find({ followeeId: userId }).populate(
-      "targetUserId",
+    const followers = await Follow.find({ targetUserId: userId }).populate(
+      "followerId",
       "nickname name"
     );
 
