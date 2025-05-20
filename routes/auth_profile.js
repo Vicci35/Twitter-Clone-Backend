@@ -3,7 +3,7 @@ import User from "../models/User.js";
 
 const router = express.Router();
 
-// Hämta en användarprofil med ID
+
 router.get("/profile/:id", async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select("-password");
