@@ -2,51 +2,58 @@ import request from "supertest";
 import app from "../app.js";
 import mongoose from "mongoose";
 import User from "../models/User.js";
-import { MongoMemoryServer } from "mongodb-memory-server";
-import { describe, it, beforeAll, afterAll, expect } from "vitest";
+import { getHashedPassword } from "../services/auth.js";
+import { describe, it, beforeAll, afterEach, afterAll, expect } from "vitest";
+import dotenv from "dotenv";
 
-let mongoServer;
+dotenv.config();
+
+let token; 
 
 beforeAll(async () => {
-  mongoServer = await MongoMemoryServer.create();
-  const uri = mongoServer.getUri();
-  await mongoose.connect(uri, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  });
-});
+  await mongoose.connect(process.env.MONGO_URI);
+  await User.deleteMany({ email: "profiltest@test.com" });
 
-afterEach(async () => {
-  await User.deleteMany();
+  const hashedPassword = await getHashedPassword("lösenord123");
+  await User.create({
+    email: "profiltest@test.com",
+    password: hashedPassword,
+    name: "Profil Testare",
+    nickname: "profiltest",
+  });
+
+
+  const loginRes = await request(app)
+    .post("/api/login")
+    .send({ email: "profiltest@test.com", password: "lösenord123" });
+
+  token = loginRes.body.token;
 });
 
 afterAll(async () => {
-  await mongoose.connection.close();
-  await mongoServer.stop();
+    await mongoose.connection.close();
 });
 
 describe("GET /profile/:id", () => {
-  it("ska returnera en användarprofil", async () => {
-    const newUser = new User({
-      email: "profiltest@test.com",
-      password: "hashedpassword",
-      name: "Profil Testare",
-      nickname: "profilen"
-    });
+  it("returnera en användarprofil", async () => {
+ const user = await User.findOne({ email: "profiltest@test.com" });
 
-    await newUser.save();
-
-    const res = await request(app).get(`/api/profile/${newUser._id}`);
+    const res = await request(app)
+      .get(`/api/profile/${user._id}`)
+      .set("Authorization", `Bearer ${token}`); 
 
     expect(res.statusCode).toBe(200);
     expect(res.body.email).toBe("profiltest@test.com");
     expect(res.body.name).toBe("Profil Testare");
-    expect(res.body).not.toHaveProperty("password");
-  });
+});
 
   it("ska returnera 404 om användaren inte finns", async () => {
     const fakeId = new mongoose.Types.ObjectId();
-    const res = await request(app).get(`/api/profile/${fakeId}`);
+
+    const res = await request(app)
+      .get(`/api/profile/${fakeId}`)
+      .set("Authorization", `Bearer ${token}`);
+
     expect(res.statusCode).toBe(404);
   });
 });

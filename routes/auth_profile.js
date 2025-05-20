@@ -1,10 +1,10 @@
 import express from "express";
 import User from "../models/User.js";
+import authenticateToken from "./middleware/authToken.js";
 
 const router = express.Router();
 
-
-router.get("/profile/:id", async (req, res) => {
+router.get("/profile/:id", authenticateToken, async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select("-password");
     if (!user) {
