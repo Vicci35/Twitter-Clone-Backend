@@ -9,6 +9,7 @@ import authRoutes from "./routes/auth_login.js";
 import postRoutes from "./routes/posts.js";
 import dashRouter from "./routes/dashboard.js";
 import signupRoute from "./routes/auth_signup.js";
+import followRoutes from "./routes/follow.js";
 
 const app = express();
 
@@ -26,5 +27,6 @@ app.use("/api", authRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/dashboard", dashRouter);
 app.use("/api", signupRoute);
+app.use("/api", followRoutes);
 
 export default app;
