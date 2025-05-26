@@ -81,4 +81,24 @@ router.post("/", async (req, res) => {
   }
 });
 
+//search posts
+router.get("/search", async (req, res) => {
+  const { q } = req.query;
+
+  try {
+    if (!q || q.trim() === "") {
+      return res.status(400).json({ error: "Sökfråga saknas" });
+    }
+
+    const posts = await Post.find({ content: { $regex: q, $options: "i" } })
+      .populate("author", "nickname")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(posts);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
 export default router;
