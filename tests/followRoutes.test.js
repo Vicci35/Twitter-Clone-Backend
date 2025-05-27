@@ -1,3 +1,4 @@
+
 import request from "supertest";
 import app from "../app.js";
 import mongoose from "mongoose";
@@ -140,5 +141,6 @@ describe("Follow Routes", () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.followers).toHaveLength(1);
     expect(res.body.followers[0].nickname).toBe("aUser");
+
   });
 });
