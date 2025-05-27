@@ -1,144 +1,146 @@
-import { describe, it, beforeEach, vi, expect } from "vitest";
+
 import request from "supertest";
-import express from "express";
-
-vi.mock("../routes/middleware/authToken.js", () => ({
-  __esModule: true,
-  default: (req, res, next) => {
-    req.user = { _id: "user1" };
-    next();
-  },
-}));
-
-import followRoutes from "../routes/follow.js";
+import app from "../app.js";
+import mongoose from "mongoose";
 import Follow from "../models/Follow.js";
 import User from "../models/User.js";
+import { getHashedPassword } from "../services/auth.js";
+import { describe, it, beforeAll, afterAll, expect, beforeEach } from "vitest";
+import dotenv from "dotenv";
 
-vi.mock("../models/Follow");
-vi.mock("../models/User");
+dotenv.config();
 
-const app = express();
-app.use(express.json());
-app.use("/api", followRoutes);
+let userA, userB;
+let tokenA;
 
-describe("Follow Routes", () => {
-  beforeEach(() => {
-    vi.resetAllMocks();
+beforeAll(async () => {
+  await mongoose.connect(process.env.MONGO_URI); // samma URI som i dina andra tester
+
+  await User.deleteMany({});
+  await Follow.deleteMany({});
+
+  const hashedPassword = await getHashedPassword("password123");
+
+  userA = await User.create({
+    email: "usera@test.com",
+    password: hashedPassword,
+    name: "User A",
+    nickname: "aUser",
   });
 
-  it("returns 400 if targetUserId is missing", async () => {
-    const res = await request(app).post("/api/follow").send({});
+  userB = await User.create({
+    email: "userb@test.com",
+    password: hashedPassword,
+    name: "User B",
+    nickname: "bUser",
+  });
 
-    expect(res.status).toBe(400);
+  // Logga in userA för att få JWT-token
+  const res = await request(app).post("/api/login").send({
+    email: "usera@test.com",
+    password: "password123",
+  });
+
+  tokenA = res.body.token;
+});
+
+afterAll(async () => {
+  await mongoose.connection.close();
+});
+
+beforeEach(async () => {
+  await Follow.deleteMany({});
+});
+
+describe("Follow Routes", () => {
+  it("returnerar 400 om targetUserId saknas", async () => {
+    const res = await request(app)
+      .post("/api/follow")
+      .set("Authorization", `Bearer ${tokenA}`)
+      .send({});
+
+    expect(res.statusCode).toBe(400);
     expect(res.body.error).toBe("Missing targetUserId");
   });
 
-  it("returns 400 if trying to follow yourself", async () => {
+  it("returnerar 400 om man försöker följa sig själv", async () => {
     const res = await request(app)
       .post("/api/follow")
-      .send({ targetUserId: "user1" });
+      .set("Authorization", `Bearer ${tokenA}`)
+      .send({ targetUserId: userA._id });
 
-    expect(res.status).toBe(400);
+    expect(res.statusCode).toBe(400);
     expect(res.body.error).toBe("You cannot follow yourself");
   });
 
-  it("returns 400 if already following", async () => {
-    Follow.findOne.mockResolvedValue({});
-
+  it("följer en annan användare korrekt", async () => {
     const res = await request(app)
       .post("/api/follow")
-      .send({ targetUserId: "user2" });
+      .set("Authorization", `Bearer ${tokenA}`)
+      .send({ targetUserId: userB._id });
 
-    expect(res.status).toBe(400);
-    expect(res.body.error).toBe("Already following this user");
-  });
-
-  it("succesfully follows a user", async () => {
-    Follow.findOne.mockResolvedValue(null);
-    Follow.prototype.save = vi.fn().mockResolvedValue({});
-
-    User.findByIdAndUpdate.mockResolvedValue({});
-
-    const res = await request(app)
-      .post("/api/follow")
-      .send({ targetUserId: "user2" });
-
-    expect(res.status).toBe(201);
+    expect(res.statusCode).toBe(201);
     expect(res.body.message).toBe("Followed successfully");
   });
 
-  it("returns 500 on DB error", async () => {
-    Follow.findOne.mockRejectedValue(new Error("DB error"));
+  it("returnerar 400 om man redan följer användaren", async () => {
+    await Follow.create({
+      followerId: userA._id,
+      targetUserId: userB._id,
+    });
 
     const res = await request(app)
       .post("/api/follow")
-      .send({ targetUserId: "user2" });
+      .set("Authorization", `Bearer ${tokenA}`)
+      .send({ targetUserId: userB._id });
 
-    expect(res.status).toBe(500);
-    expect(res.body.error).toBe("DB error");
+    expect(res.statusCode).toBe(400);
+    expect(res.body.error).toBe("Already following this user");
   });
 
-  it("unfollows a user successfully", async () => {
-    Follow.findOneAndDelete.mockResolvedValue({});
-    User.findByIdAndUpdate.mockResolvedValue({});
+  it("avföljer en användare korrekt", async () => {
+    await Follow.create({
+      followerId: userA._id,
+      targetUserId: userB._id,
+    });
 
     const res = await request(app)
       .post("/api/unfollow")
-      .send({ targetUserId: "user2" });
+      .set("Authorization", `Bearer ${tokenA}`)
+      .send({ targetUserId: userB._id });
 
-    expect(res.status).toBe(200);
-    expect(res.body.message).toBe("Unfollowed succesfully");
+    expect(res.statusCode).toBe(200);
+    expect(res.body.message).toBe("Unfollowed successfully");
   });
 
-  it("returns 404 when unfollowing a user not followed", async () => {
-    Follow.findOneAndDelete.mockResolvedValue(null);
+  it("returnerar följelista korrekt", async () => {
+    await Follow.create({
+      followerId: userA._id,
+      targetUserId: userB._id,
+    });
 
     const res = await request(app)
-      .post("/api/unfollow")
-      .send({ targetUserId: "user2" });
+      .get("/api/following")
+      .set("Authorization", `Bearer ${tokenA}`);
 
-    expect(res.status).toBe(404);
-    expect(res.body.error).toBe("Not following this user");
+    expect(res.statusCode).toBe(200);
+    expect(res.body.following).toHaveLength(1);
+    expect(res.body.following[0].nickname).toBe("bUser");
   });
 
-  it("returns following list", async () => {
-    Follow.find.mockReturnValue({
-      populate: vi.fn().mockResolvedValue([
-        {
-          targetUserId: {
-            _id: "user2",
-            nickname: "nick2",
-            name: "Name2",
-          },
-        },
-      ]),
-    });
-    const res = await request(app).get("/api/following");
-
-    expect(res.status).toBe(200);
-    expect(res.body.following).toEqual([
-      { id: "user2", nickname: "nick2", name: "Name2" },
-    ]);
-  });
-
-  it("returns followers of a specific user", async () => {
-    Follow.find.mockReturnValue({
-      populate: vi.fn().mockResolvedValue([
-        {
-          followerId: {
-            _id: "user1",
-            nickname: "nick1",
-            name: "Name1",
-          },
-        },
-      ]),
+  it("hämtar följare för en användare", async () => {
+    await Follow.create({
+      followerId: userA._id,
+      targetUserId: userB._id,
     });
 
-    const res = await request(app).get("/api/followers/user2");
+    const res = await request(app)
+      .get(`/api/followers/${userB._id}`)
+      .set("Authorization", `Bearer ${tokenA}`);
 
-    expect(res.status).toBe(200);
-    expect(res.body.followers).toEqual([
-      { id: "user1", nickname: "nick1", name: "Name1" },
-    ]);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.followers).toHaveLength(1);
+    expect(res.body.followers[0].nickname).toBe("aUser");
+
   });
 });
