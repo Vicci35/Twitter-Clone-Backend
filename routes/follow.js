@@ -1,5 +1,7 @@
 import express from "express";
+import mongoose from "mongoose";
 import Follow from "../models/Follow.js";
+import User from "../models/User.js";
 import authenticateToken from "./middleware/authToken.js";
 import User from "../models/User.js";
 
@@ -10,23 +12,38 @@ router.use(authenticateToken);
 //Follow
 router.post("/follow", async (req, res) => {
   const followerId = req.user._id;
-  const { targetUserId } = req.body;
 
+  console.log(followerId);
+
+  const { targetUserId } = req.body;
+  console.log(targetUserId);
+
+  if (!mongoose.Types.ObjectId.isValid(targetUserId)) {
+    return res.status(400).json({ error: "Invalid userId format" });
+  }
+
+  const objectTargetId =
+    mongoose.Types.ObjectId.createFromHexString(targetUserId);
+
+  console.log(objectTargetId);
   if (!targetUserId) {
     return res.status(400).json({ error: "Missing targetUserId" });
   }
 
-  if (followerId.toString() === targetUserId) {
+  if (followerId.toString() === objectTargetId) {
     return res.status(400).json({ error: "You cannot follow yourself" });
   }
 
   try {
-    const alreadyFollowing = await Follow.findOne({ followerId, targetUserId });
+    const alreadyFollowing = await Follow.findOne({
+      followerId,
+      targetUserId: objectTargetId,
+    });
     if (alreadyFollowing) {
       return res.status(400).json({ error: "Already following this user" });
     }
 
-    const newFollow = new Follow({ followerId, targetUserId });
+    const newFollow = new Follow({ followerId, targetUserId: objectTargetId });
     await newFollow.save();
 
     await Promise.all([
@@ -39,8 +56,10 @@ router.post("/follow", async (req, res) => {
       }),
     ]);
 
+    console.log("SUCCESS");
     res.status(201).json({ message: "Followed successfully" });
   } catch (error) {
+    console.log("FEL:", error);
     res.status(500).json({ error: error.message });
   }
 });
