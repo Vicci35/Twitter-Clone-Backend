@@ -5,6 +5,9 @@ import Follow from "../models/Follow.js";
 import User from "../models/User.js";
 import { getHashedPassword } from "../services/auth.js";
 import { describe, it, beforeAll, afterAll, expect, beforeEach } from "vitest";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 let userA, userB;
 let tokenA;
