@@ -3,78 +3,82 @@ import mongoose from "mongoose";
 import Follow from "../models/Follow.js";
 import User from "../models/User.js";
 import authenticateToken from "./middleware/authToken.js";
-import User from "../models/User.js";
 
 const router = express.Router();
 
 router.use(authenticateToken);
 
-//Follow
+// Follow
 router.post("/follow", async (req, res) => {
-  const followerId = req.user._id;
-
-  console.log(followerId);
-
+  const followerId = mongoose.Types.ObjectId(req.user._id);
   const { targetUserId } = req.body;
-  console.log(targetUserId);
+
+  if (!targetUserId) {
+    return res.status(400).json({ error: "Missing targetUserId" });
+  }
 
   if (!mongoose.Types.ObjectId.isValid(targetUserId)) {
     return res.status(400).json({ error: "Invalid userId format" });
   }
 
-  const objectTargetId =
-    mongoose.Types.ObjectId.createFromHexString(targetUserId);
+  const objectTargetId = mongoose.Types.ObjectId(targetUserId);
 
-  console.log(objectTargetId);
-  if (!targetUserId) {
-    return res.status(400).json({ error: "Missing targetUserId" });
-  }
-
-  if (followerId.toString() === objectTargetId) {
+  if (followerId.toString() === objectTargetId.toString()) {
     return res.status(400).json({ error: "You cannot follow yourself" });
   }
 
   try {
     const alreadyFollowing = await Follow.findOne({
-      followerId,
+      followerId: followerId,
       targetUserId: objectTargetId,
     });
+
     if (alreadyFollowing) {
       return res.status(400).json({ error: "Already following this user" });
     }
 
-    const newFollow = new Follow({ followerId, targetUserId: objectTargetId });
+    const newFollow = new Follow({
+      followerId: followerId,
+      targetUserId: objectTargetId,
+    });
     await newFollow.save();
 
     await Promise.all([
       User.findByIdAndUpdate(followerId, {
-        $addToSet: { following: targetUserId },
+        $addToSet: { following: objectTargetId },
       }),
-
-      User.findByIdAndUpdate(targetUserId, {
+      User.findByIdAndUpdate(objectTargetId, {
         $addToSet: { followers: followerId },
       }),
     ]);
 
-    console.log("SUCCESS");
-    res.status(201).json({ message: "Followed successfully" });
+    return res.status(201).json({ message: "Followed successfully" });
   } catch (error) {
-    console.log("FEL:", error);
-    res.status(500).json({ error: error.message });
+    console.error("Follow route error:", error);
+    return res.status(500).json({ error: error.message || "DB error" });
   }
 });
 
-//Unfollow
+// Unfollow
 router.post("/unfollow", async (req, res) => {
-  const followerId = req.user._id;
+  const followerId = mongoose.Types.ObjectId(req.user._id);
   const { targetUserId } = req.body;
 
   if (!targetUserId) {
-    return res.status(400).json({ error: "Missing followeeId" });
+    return res.status(400).json({ error: "Missing targetUserId" });
   }
 
+  if (!mongoose.Types.ObjectId.isValid(targetUserId)) {
+    return res.status(400).json({ error: "Invalid userId format" });
+  }
+
+  const objectTargetId = mongoose.Types.ObjectId(targetUserId);
+
   try {
-    const result = await Follow.findOneAndDelete({ followerId, targetUserId });
+    const result = await Follow.findOneAndDelete({
+      followerId,
+      targetUserId: objectTargetId,
+    });
 
     if (!result) {
       return res.status(404).json({ error: "Not following this user" });
@@ -82,26 +86,26 @@ router.post("/unfollow", async (req, res) => {
 
     await Promise.all([
       User.findByIdAndUpdate(followerId, {
-        $pull: { following: targetUserId },
+        $pull: { following: objectTargetId },
       }),
-
-      User.findByIdAndUpdate(targetUserId, {
+      User.findByIdAndUpdate(objectTargetId, {
         $pull: { followers: followerId },
       }),
     ]);
 
-    res.status(200).json({ message: "Unfollowed successfully" });
+    return res.status(200).json({ message: "Unfollowed successfully" });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: "DB error" });
   }
 });
 
-//Following
+// Following list
 router.get("/following", async (req, res) => {
   try {
     const userId = req.user._id;
+    const objectUserId = mongoose.Types.ObjectId(userId);
 
-    const following = await Follow.find({ followerId: userId }).populate(
+    const following = await Follow.find({ followerId: objectUserId }).populate(
       "targetUserId",
       "nickname name"
     );
@@ -118,15 +122,15 @@ router.get("/following", async (req, res) => {
   }
 });
 
-//Following a sertain user
+// Followers of a specific user
 router.get("/followers/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
+    const objectUserId = mongoose.Types.ObjectId(userId);
 
-    const followers = await Follow.find({ targetUserId: userId }).populate(
-      "followerId",
-      "nickname name"
-    );
+    const followers = await Follow.find({
+      targetUserId: objectUserId,
+    }).populate("followerId", "nickname name");
 
     const followingUsers = followers.map((entry) => ({
       id: entry.followerId._id,
