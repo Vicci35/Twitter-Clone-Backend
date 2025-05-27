@@ -1,6 +1,7 @@
 import express from "express";
 import Follow from "../models/Follow.js";
 import authenticateToken from "./middleware/authToken.js";
+import User from "../models/User.js";
 
 const router = express.Router();
 
@@ -28,6 +29,16 @@ router.post("/follow", async (req, res) => {
     const newFollow = new Follow({ followerId, targetUserId });
     await newFollow.save();
 
+    await Promise.all([
+      User.findByIdAndUpdate(followerId, {
+        $addToSet: { following: targetUserId },
+      }),
+
+      User.findByIdAndUpdate(targetUserId, {
+        $addToSet: { followers: followerId },
+      }),
+    ]);
+
     res.status(201).json({ message: "Followed successfully" });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -50,7 +61,17 @@ router.post("/unfollow", async (req, res) => {
       return res.status(404).json({ error: "Not following this user" });
     }
 
-    res.status(200).json({ message: "Unfollowed succesfully" });
+    await Promise.all([
+      User.findByIdAndUpdate(followerId, {
+        $pull: { following: targetUserId },
+      }),
+
+      User.findByIdAndUpdate(targetUserId, {
+        $pull: { followers: followerId },
+      }),
+    ]);
+
+    res.status(200).json({ message: "Unfollowed successfully" });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
