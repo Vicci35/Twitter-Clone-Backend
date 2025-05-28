@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import Follow from "../models/Follow.js";
 import User from "../models/User.js";
 import authenticateToken from "./middleware/authToken.js";
-import User from "../models/User.js";
+
 
 const router = express.Router();
 
