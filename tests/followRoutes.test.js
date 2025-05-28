@@ -7,17 +7,19 @@ import User from "../models/User.js";
 import { getHashedPassword } from "../services/auth.js";
 import { describe, it, beforeAll, afterAll, expect, beforeEach } from "vitest";
 import dotenv from "dotenv";
+import { MongoMemoryServer } from "mongodb-memory-server";
 
 dotenv.config();
 
+let mongoServer;
 let userA, userB;
 let tokenA;
 
 beforeAll(async () => {
-  await mongoose.connect(process.env.MONGO_URI); // samma URI som i dina andra tester
+  mongoServer = await MongoMemoryServer.create();
+  const uri = mongoServer.getUri();
 
-  await User.deleteMany({});
-  await Follow.deleteMany({});
+  await mongoose.connect(uri);
 
   const hashedPassword = await getHashedPassword("password123");
 
@@ -42,10 +44,15 @@ beforeAll(async () => {
   });
 
   tokenA = res.body.token;
+
+  if (!tokenA) {
+    throw new Error("JWT token saknas från login-response");
+  }
 });
 
 afterAll(async () => {
-  await mongoose.connection.close();
+  await mongoose.disconnect();
+  await mongoServer.stop();
 });
 
 beforeEach(async () => {
