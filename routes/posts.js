@@ -8,7 +8,7 @@ const router = express.Router();
 router.get("/feed", async (req, res) => {
   try {
     const posts = await Post.find()
-      .populate("author", "nickname")
+      .populate("author", "nickname profileImage")
       .sort({ createdAt: -1 });
 
     res.status(200).json(posts);
@@ -26,7 +26,7 @@ router.get("/feed/following/:id", async (req, res) => {
     }
 
     const posts = await Post.find({ author: { $in: user.following } })
-      .populate("author", "nickname")
+      .populate("author", "nickname profileImage")
       .sort({ createdAt: -1 });
 
     res.status(200).json(posts);
@@ -39,7 +39,7 @@ router.get("/feed/following/:id", async (req, res) => {
 router.get("/user/:id", async (req, res) => {
   try {
     const posts = await Post.find({ author: req.params.id })
-      .populate("author", "nickname")
+      .populate("author", "nickname profileImage")
       .sort({ createdAt: -1 });
 
     res.status(200).json(posts);
@@ -73,7 +73,7 @@ router.post("/", async (req, res) => {
 
     const populatedPost = await Post.findById(newPost._id).populate(
       "author",
-      "nickname"
+      "nickname profileImage"
     );
     res.status(201).json(populatedPost);
   } catch (error) {
