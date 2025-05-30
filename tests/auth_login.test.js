@@ -6,11 +6,16 @@ import app from "../app.js";
 import mongoose from "mongoose";
 import User from "../models/User.js";
 import { getHashedPassword } from "../services/auth.js";
-import { describe, it, beforeAll, afterAll, expect } from "vitest";
+import { describe, it, beforeAll, afterAll, beforeEach, expect } from "vitest";
+import { MongoMemoryServer } from "mongodb-memory-server";
+
+let mongoServer;
 
 beforeAll(async () => {
-  await mongoose.connect(process.env.MONGO_URI);
-  await User.deleteMany({ email: "test@example.com" });
+  mongoServer = await MongoMemoryServer.create(); 
+  const uri = mongoServer.getUri();
+
+  await mongoose.connect(uri); 
 
   const hashedPassword = await getHashedPassword("lösenord123");
   await User.create({
@@ -21,8 +26,27 @@ beforeAll(async () => {
   });
 });
 
+beforeEach(async () => {
+  
+  const collections = mongoose.connection.collections;
+  for (const key in collections) {
+    await collections[key].deleteMany({});
+  }
+
+  const hashedPassword = await getHashedPassword("lösenord123");
+  await User.create({
+    email: "test@example.com",
+    password: hashedPassword,
+    name: "Test Användare",
+    nickname: "testarn",
+  });
+});
+
+
 afterAll(async () => {
+  await mongoose.connection.dropDatabase();
   await mongoose.connection.close();
+  await mongoServer.stop(); 
 });
 
 describe("Login tests", () => {
