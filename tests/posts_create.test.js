@@ -4,15 +4,17 @@ import mongoose from "mongoose";
 import User from "../models/User.js";
 import Post from "../models/Post.js";
 import { getHashedPassword } from "../services/auth.js";
-import { describe, it, beforeAll, afterAll, expect } from "vitest";
+import { describe, it, beforeAll, afterAll, expect, beforeEach, afterEach } from "vitest";
+import { MongoMemoryServer } from "mongodb-memory-server";
 
 let testUser;
+let mongoServer;
 
 beforeAll(async () => {
-  await mongoose.connect(process.env.MONGO_URI);
+    mongoServer = await MongoMemoryServer.create();
+  const uri = mongoServer.getUri();
 
-  await User.deleteMany({});
-  await Post.deleteMany({});
+  await mongoose.connect(uri);
 
   const hashedPassword = await getHashedPassword("test123");
 
@@ -24,8 +26,22 @@ beforeAll(async () => {
   });
 });
 
+beforeEach(async () => {
+  await User.deleteMany({});
+  await Post.deleteMany({});
+
+  const hashedPassword = await getHashedPassword("test123");
+    testUser = await User.create({
+    email: "posttest@test.com",
+    password: hashedPassword,
+    name: "Post Testare",
+    nickname: "postarn",
+  });
+});
+
 afterAll(async () => {
-  await mongoose.connection.close();
+  await mongoose.disconnect();
+  await mongoServer.stop();
 });
 
 describe("POST /api/posts", () => {

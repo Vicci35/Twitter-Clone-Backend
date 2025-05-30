@@ -3,15 +3,23 @@ import app from "../app.js";
 import mongoose from "mongoose";
 import Post from "../models/Post.js";
 import User from "../models/User.js";
-import { describe, it, beforeAll, afterAll, expect } from "vitest";
+import { describe, it, beforeAll, afterAll, expect, beforeEach } from "vitest";
 import { getHashedPassword } from "../services/auth.js";
+import { MongoMemoryServer } from "mongodb-memory-server";
 
+let mongoServer;
 let testUserId;
 
 beforeAll(async () => {
-  await mongoose.connect(process.env.MONGO_URI);
-  await Post.deleteMany();
-  await User.deleteMany();
+  mongoServer = await MongoMemoryServer.create();
+  const uri = mongoServer.getUri();
+
+  await mongoose.connect(uri);
+});
+
+beforeEach(async () => {
+  await User.deleteMany({});
+  await Post.deleteMany({});
 
   const hashedPassword = await getHashedPassword("feedtest123")
 
@@ -31,7 +39,8 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await mongoose.connection.close();
+  await mongoose.disconnect();
+  await mongoServer.stop();
 });
 
 describe("GET /api/posts/feed", () => {
