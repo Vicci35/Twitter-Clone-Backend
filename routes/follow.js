@@ -1,94 +1,118 @@
 import express from "express";
 import mongoose from "mongoose";
 import Follow from "../models/Follow.js";
-import User from "../models/User.js";
 import authenticateToken from "./middleware/authToken.js";
+import User from "../models/User.js";
 
+const express = require('express');
 const router = express.Router();
 
 router.use(authenticateToken);
 
-//Follow
+// Hjälpfunktion
+function getValidObjectId(id) {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return null;
+  }
+  return new mongoose.Types.ObjectId(id);
+}
+
+// Follow
 router.post("/follow", async (req, res) => {
-  const followerId = req.user._id;
-
-  console.log(followerId);
-
-  const { targetUserId } = req.body;
-  console.log(targetUserId);
-
-  if (!mongoose.Types.ObjectId.isValid(targetUserId)) {
-    return res.status(400).json({ error: "Invalid userId format" });
-  }
-
-  const objectTargetId =
-    mongoose.Types.ObjectId.createFromHexString(targetUserId);
-
-  console.log(objectTargetId);
-  if (!targetUserId) {
-    return res.status(400).json({ error: "Missing targetUserId" });
-  }
-
-  if (followerId.toString() === objectTargetId) {
-    return res.status(400).json({ error: "You cannot follow yourself" });
-  }
-
   try {
+    const followerId = getValidObjectId(req.user._id);
+    const { targetUserId } = req.body;
+
+    if (!targetUserId) {
+      return res.status(400).json({ error: "Missing targetUserId" });
+    }
+
+    const objectTargetId = getValidObjectId(targetUserId);
+
+    if (!objectTargetId) {
+  return res.status(400).json({ error: "Invalid targetUserId" });
+}
+
+    if (followerId.toString() === objectTargetId.toString()) {
+      return res.status(400).json({ error: "You cannot follow yourself" });
+    }
+
     const alreadyFollowing = await Follow.findOne({
       followerId,
       targetUserId: objectTargetId,
     });
+
     if (alreadyFollowing) {
       return res.status(400).json({ error: "Already following this user" });
     }
 
-    const newFollow = new Follow({ followerId, targetUserId: objectTargetId });
+    const newFollow = new Follow({
+      followerId,
+      targetUserId: objectTargetId,
+    });
     await newFollow.save();
 
     await Promise.all([
       User.findByIdAndUpdate(followerId, {
         $addToSet: { following: objectTargetId },
       }),
-
       User.findByIdAndUpdate(objectTargetId, {
         $addToSet: { followers: followerId },
       }),
     ]);
 
-    console.log("SUCCESS");
-    res.status(201).json({ message: "Followed successfully" });
+    return res.status(201).json({ message: "Followed successfully" });
   } catch (error) {
-    console.log("FEL:", error);
-    res.status(500).json({ error: error.message });
+    console.error("Follow route error:", error);
+    return res.status(500).json({ error: error.message || "DB error" });
   }
 });
 
-//Unfollow
+// Unfollow
 router.post("/unfollow", async (req, res) => {
-  const followerId = req.user._id;
-  const { targetUserId } = req.body;
-
-  if (!targetUserId) {
-    return res.status(400).json({ error: "Missing followeeId" });
-  }
-
   try {
-    const result = await Follow.findOneAndDelete({ followerId, targetUserId });
+    const followerId = getValidObjectId(req.user._id);
+    const { targetUserId } = req.body;
+
+    if (!targetUserId) {
+      return res.status(400).json({ error: "Missing targetUserId" });
+    }
+
+    const objectTargetId = getValidObjectId(targetUserId);
+
+    if (!objectTargetId) {
+  return res.status(400).json({ error: "Invalid targetUserId" });
+}
+
+    const result = await Follow.findOneAndDelete({
+      followerId,
+      targetUserId: objectTargetId,
+    });
 
     if (!result) {
       return res.status(404).json({ error: "Not following this user" });
     }
 
-    res.status(200).json({ message: "Unfollowed succesfully" });
+    await Promise.all([
+      User.findByIdAndUpdate(followerId, {
+        $pull: { following: objectTargetId },
+      }),
+      User.findByIdAndUpdate(objectTargetId, {
+        $pull: { followers: followerId },
+      }),
+    ]);
+
+    return res.status(200).json({ message: "Unfollowed successfully" });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Unfollow route error:", error);
+    return res.status(500).json({ error: error.message || "DB error" });
   }
 });
 
-//Following
+// Following list
 router.get("/following", async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = getValidObjectId(req.user._id);
 
     const following = await Follow.find({ followerId: userId }).populate(
       "targetUserId",
@@ -107,15 +131,14 @@ router.get("/following", async (req, res) => {
   }
 });
 
-//Following a sertain user
+// Followers of a specific user
 router.get("/followers/:userId", async (req, res) => {
   try {
-    const { userId } = req.params;
+    const objectUserId = getValidObjectId(req.params.userId);
 
-    const followers = await Follow.find({ targetUserId: userId }).populate(
-      "followerId",
-      "nickname name"
-    );
+    const followers = await Follow.find({
+      targetUserId: objectUserId,
+    }).populate("followerId", "nickname name");
 
     const followingUsers = followers.map((entry) => ({
       id: entry.followerId._id,

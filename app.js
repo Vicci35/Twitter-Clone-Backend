@@ -51,6 +51,7 @@ app.use("/dashboard", dashRouter);
 app.use("/api", signupRoute);
 app.use("/api", followRoutes);
 app.use("/api", profileRoutes);
+app.use("/uploads", express.static("uploads"));
 
 // 👇 Exportera både server och io
 export { server, io };
