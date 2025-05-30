@@ -19,10 +19,7 @@ beforeAll(async () => {
   mongoServer = await MongoMemoryServer.create();
   const uri = mongoServer.getUri();
 
-  await mongoose.connect(uri, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+  await mongoose.connect(uri);
 
   const hashedPassword = await getHashedPassword("password123");
 
@@ -60,7 +57,7 @@ afterAll(async () => {
 
 beforeEach(async () => {
   await Follow.deleteMany({});
-  await User.deleteMany({});
+  
 });
 
 describe("Follow Routes", () => {
@@ -155,3 +152,4 @@ describe("Follow Routes", () => {
 
   });
 });
+

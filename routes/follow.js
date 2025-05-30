@@ -4,6 +4,7 @@ import Follow from "../models/Follow.js";
 import authenticateToken from "./middleware/authToken.js";
 import User from "../models/User.js";
 
+const express = require('express');
 const router = express.Router();
 
 router.use(authenticateToken);
@@ -11,7 +12,7 @@ router.use(authenticateToken);
 // Hjälpfunktion
 function getValidObjectId(id) {
   if (!mongoose.Types.ObjectId.isValid(id)) {
-    throw new Error("Invalid ObjectId format");
+    return null;
   }
   return new mongoose.Types.ObjectId(id);
 }
@@ -27,6 +28,10 @@ router.post("/follow", async (req, res) => {
     }
 
     const objectTargetId = getValidObjectId(targetUserId);
+
+    if (!objectTargetId) {
+  return res.status(400).json({ error: "Invalid targetUserId" });
+}
 
     if (followerId.toString() === objectTargetId.toString()) {
       return res.status(400).json({ error: "You cannot follow yourself" });
@@ -74,6 +79,10 @@ router.post("/unfollow", async (req, res) => {
     }
 
     const objectTargetId = getValidObjectId(targetUserId);
+
+    if (!objectTargetId) {
+  return res.status(400).json({ error: "Invalid targetUserId" });
+}
 
     const result = await Follow.findOneAndDelete({
       followerId,
