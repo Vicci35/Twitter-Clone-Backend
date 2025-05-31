@@ -54,4 +54,4 @@ app.use("/api", profileRoutes);
 app.use("/uploads", express.static("uploads"));
 
 // 👇 Exportera både server och io
-export { server, io };
+export { app, server, io };
