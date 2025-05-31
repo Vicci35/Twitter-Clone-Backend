@@ -4,15 +4,20 @@ import mongoose from "mongoose";
 import User from "../models/User.js";
 import { getHashedPassword } from "../services/auth.js";
 import { describe, it, beforeAll, afterEach, afterAll, expect } from "vitest";
-import dotenv from "dotenv";
+import { MongoMemoryServer } from "mongodb-memory-server";
 
-dotenv.config();
-
+let mongoServer;
 let token; 
 
 beforeAll(async () => {
-  await mongoose.connect(process.env.MONGO_URI);
-  await User.deleteMany({ email: "profiltest@test.com" });
+  mongoServer = await MongoMemoryServer.create(); 
+  const uri = mongoServer.getUri();
+
+  await mongoose.connect(uri, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  });
+  
 
   const hashedPassword = await getHashedPassword("lösenord123");
   await User.create({
@@ -31,7 +36,9 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-    await mongoose.connection.close();
+  await mongoose.connection.dropDatabase();   
+  await mongoose.connection.close();           
+  await mongoServer.stop();
 });
 
 describe("GET /profile/:id", () => {

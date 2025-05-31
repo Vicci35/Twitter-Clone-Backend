@@ -57,6 +57,7 @@ afterAll(async () => {
 
 beforeEach(async () => {
   await Follow.deleteMany({});
+  
 });
 
 describe("Follow Routes", () => {
@@ -151,3 +152,4 @@ describe("Follow Routes", () => {
 
   });
 });
+

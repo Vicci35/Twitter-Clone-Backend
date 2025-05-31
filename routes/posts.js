@@ -25,8 +25,11 @@ router.get("/feed/following/:id", async (req, res) => {
       return res.status(404).json({ error: "Uer not found" });
     }
 
-    const posts = await Post.find({ author: { $in: user.following } })
-      .populate("author", "nickname profileImage")
+
+    const idsToInclude = [...user.following, user._id];
+    const posts = await Post.find({ author: { $in: idsToInclude } })
+      .populate("author", "nickname")
+
       .sort({ createdAt: -1 });
 
     res.status(200).json(posts);
@@ -99,6 +102,5 @@ router.get("/search", async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
 
 export default router;

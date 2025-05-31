@@ -1,6 +1,6 @@
 import request from "supertest";
 import mongoose from "mongoose";
-import { beforeAll, afterAll, describe, it, expect } from "vitest";
+import { beforeAll, afterAll, beforeEach, describe, it, expect } from "vitest";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import { getHashedPassword } from "../services/auth.js";
 import app from "../app.js"; 
@@ -13,6 +13,11 @@ beforeAll(async () => {
   mongoServer = await MongoMemoryServer.create();
   const uri = mongoServer.getUri();
   await mongoose.connect(uri);
+});
+
+  beforeEach(async () => {
+  await User.deleteMany({});
+  await Post.deleteMany({});
 
   const hashedPassword = await getHashedPassword("searchtest123")
 
