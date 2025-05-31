@@ -103,4 +103,36 @@ router.get("/search", async (req, res) => {
   }
 });
 
+router.post("/:postId/comments", async (req, res) => {
+  try {
+    const { content, userId } = req.body;
+    const { postId } = req.params;
+
+    if (!content || !userId) {
+      return res.status(400).json({ error: "Missing content or userId" });
+    }
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+
+    const comment = {
+      user: userId,
+      content,
+      createdAt: new Date(),
+    };
+
+    post.comments.push(comment);
+    await post.save();
+
+    const updatedPost = await Post.findById(postId)
+      .populate("author", "nickname profileImage")
+      .populate("comments.user", "nickname");
+
+    res.status(201).json(updatedPost);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;
