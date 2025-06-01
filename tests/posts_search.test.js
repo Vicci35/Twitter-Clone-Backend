@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import { beforeAll, afterAll, beforeEach, describe, it, expect } from "vitest";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import { getHashedPassword } from "../services/auth.js";
-import app from "../app.js"; 
+import {app} from "../app.js"; 
 import Post from "../models/Post.js";
 import User from "../models/User.js";
 
