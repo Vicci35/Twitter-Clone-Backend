@@ -1,7 +1,31 @@
 {
+<<<<<<< HEAD
+=======
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "test": "vitest",
+    "dev": "nodemon server.js"
+  },
+>>>>>>> 094231e940ccf2a537c271a1b14b05f09f0ceae1
   "dependencies": {
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
-    "mongoose": "^8.14.1"
+    "fs": "^0.0.1-security",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.14.1",
+
+    "socket.io": "^4.8.1",
+
+    "multer": "^2.0.0",
+    "path": "^0.12.7"
+
+  },
+  "devDependencies": {
+    "mongodb-memory-server": "^10.1.4",
+    "mongoose": "^8.14.3",
+    "nodemon": "^3.1.10",
+    "supertest": "^7.1.1",
+    "vitest": "^3.1.4"
   }
 }
