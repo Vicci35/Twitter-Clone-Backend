@@ -25,7 +25,6 @@ router.get("/feed/following/:id", async (req, res) => {
       return res.status(404).json({ error: "Uer not found" });
     }
 
-
     const idsToInclude = [...user.following, user._id];
     const posts = await Post.find({ author: { $in: idsToInclude } })
       .populate("author", "nickname")
@@ -108,6 +107,9 @@ router.post("/:postId/comments", async (req, res) => {
     const { content, userId } = req.body;
     const { postId } = req.params;
 
+    // Get user nickname
+    const thisUser = await User.findById(userId);
+
     if (!content || !userId) {
       return res.status(400).json({ error: "Missing content or userId" });
     }
@@ -118,6 +120,7 @@ router.post("/:postId/comments", async (req, res) => {
 
     const comment = {
       user: userId,
+      nickname: thisUser.nickname,
       content,
       createdAt: new Date(),
     };
