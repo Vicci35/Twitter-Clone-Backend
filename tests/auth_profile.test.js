@@ -1,3 +1,6 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import request from "supertest";
 import {app} from "../app.js";
 import mongoose from "mongoose";
@@ -8,6 +11,7 @@ import { MongoMemoryServer } from "mongodb-memory-server";
 
 let mongoServer;
 let token; 
+
 
 beforeAll(async () => {
   mongoServer = await MongoMemoryServer.create(); 
@@ -30,7 +34,7 @@ beforeAll(async () => {
 
   const loginRes = await request(app)
     .post("/api/login")
-    .send({ email: "profiltest@test.com", password: "lösenord123" });
+    .send({ identifier: "profiltest@test.com", password: "lösenord123" });
 
   token = loginRes.body.token;
 });

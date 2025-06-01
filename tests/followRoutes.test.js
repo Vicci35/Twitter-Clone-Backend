@@ -1,3 +1,5 @@
+import dotenv from "dotenv";
+dotenv.config();
 
 import request from "supertest";
 import {app} from "../app.js";
@@ -6,10 +8,7 @@ import Follow from "../models/Follow.js";
 import User from "../models/User.js";
 import { getHashedPassword } from "../services/auth.js";
 import { describe, it, beforeAll, afterAll, expect, beforeEach } from "vitest";
-import dotenv from "dotenv";
 import { MongoMemoryServer } from "mongodb-memory-server";
-
-dotenv.config();
 
 let mongoServer;
 let userA, userB;
@@ -39,7 +38,7 @@ beforeAll(async () => {
 
   // Logga in userA för att få JWT-token
   const res = await request(app).post("/api/login").send({
-    email: "usera@test.com",
+    identifier: "usera@test.com",
     password: "password123",
   });
 
@@ -47,6 +46,7 @@ beforeAll(async () => {
 
   if (!tokenA) {
     throw new Error("JWT token saknas från login-response");
+    
   }
 });
 
