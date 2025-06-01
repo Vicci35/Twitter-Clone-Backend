@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -26,4 +24,3 @@ async function start() {
 }
 
 start();
->>>>>>> 094231e940ccf2a537c271a1b14b05f09f0ceae1

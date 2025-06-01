@@ -1,13 +1,10 @@
 {
-<<<<<<< HEAD
-=======
   "type": "module",
   "scripts": {
     "start": "node server.js",
     "test": "vitest",
     "dev": "nodemon server.js"
   },
->>>>>>> 094231e940ccf2a537c271a1b14b05f09f0ceae1
   "dependencies": {
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
